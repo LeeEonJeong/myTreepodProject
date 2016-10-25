@@ -25,6 +25,7 @@ class Auth extends MY_Controller {
 		
 		$this->_footer ();
 	}
+	
 	function logout() {
 		$this->session->sess_destroy ();
 		redirect ( '/auth/login' );
@@ -32,6 +33,7 @@ class Auth extends MY_Controller {
 	
 	function authentication() {
 		$this->load->model ( 'userModel' );
+		
 		$user = $this->userModel->getByEmail ( array (
 				'email' => $this->input->post ( 'email' ) 
 		) );
@@ -42,11 +44,12 @@ class Auth extends MY_Controller {
 		
 		if ($this->input->post ( 'email' ) == $user->email && password_verify ( $this->input->post ( 'password' ), $user->password)) { 
 			$this->session->set_userdata ( 'is_login', true );
+			$this->session->set_userdata ( 'nickname', $user->nickname );
 			$this->session->set_userdata ( 'apikey', $user->apikey );
 			$this->session->set_userdata ( 'secretkey', $user->secretkey );
 			$returnURL = $this->input->get ( 'returnURL' );
 			 
-			echo "<script>alert('sdfsdf".$returnURL."');</script>";
+			//echo "<script>alert('sdfsdf".$returnURL."');</script>";
 			
 			if ($returnURL === false || $returnURL == null) {
 				redirect('/cloudlist'); //기본페이지로 이동

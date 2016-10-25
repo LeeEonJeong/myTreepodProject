@@ -7,18 +7,19 @@
 			<div class="span7"  >
 				<h5>네트워크 검색하기</h5>
 				<form>
-					<div id="custom-search-input">
-						<select>
-							<option>전체</option>
-							<option>KOR-Central A</option>
-							<option>KOR-Central B</option>
-							<option>KOR-HA</option>
-							<option>KOR-Seoul M</option>
-							<option>JPN</option>
-						</select> <input type="text" class="input-medium search-query"
-							placeholder="검색할 서버명을  입력해 주세요." />
+					<div class="custom-search-input">
+						<select id='zonename'>
+			   					<option value='all'>존을 선택하세요.</option>
+								<option value="eceb5d65-6571-4696-875f-5a17949f3317">KOR-Central A</option>
+								<option value="9845bd17-d438-4bde-816d-1b12f37d5080">KOR-Central B</option>
+								<option value="dfd6f03d-dae5-458e-a2ea-cb6a55d0d994">KOR-HA</option>
+								<option value="95e2f517-d64a-4866-8585-5177c256f7c7">KOR-Seoul M</option>
+								<option value="3e8ce14a-09f1-416c-83b3-df95af9d6308">JPN</option>
+								<option value="b7eb18c8-876d-4dc6-9215-3bd455bb05be">US-West</option>
+						</select>
+						<input type="text" class="input-medium search-query"	placeholder="검색할 서버명을  입력해 주세요." />
 						<span class="input-group-btn">
-							<button type="submit">
+							<button type="button">
 								<i class="icon-search fa-10x"></i> 검색
 							</button>
 						</span> 
@@ -28,22 +29,49 @@
 			<div class="span5" >
 			<div class="nav pull-right">
 				<br><br> 
-					<a class="btn btn-primary" href="/project2/index.php/orderCloud">IP 추가 신청</a> 
+					<a class="btn btn-primary" href="/orderCloud">IP 추가 신청</a> 
 			</div> 
 			</div>
 		</div>
 	</div>
 
 <script>
-$( 
-//-----------------------------
+$(
 		function (){
-			$('#networkinfodiv').prev('span').text('네트워크를 선택해 주세요.');
+			function setModalMsg(msg){ 
+				 $('#msgModal #msg').empty();
+				 $('#msgModal #msg').html(msg);
+				 return $('#msgModal');
+			} 
 			
-			$('#networkinfodiv').hide();
-// 			$('#firewallinfo').hide();
-// 		 	$('#portforwardinginfo').hide();
-// 		 	$('#publicipinfo').hide(); 
+			function showLoadingModal(){
+				$('#loadingModal').modal({backdrop:"static", keyboard:false}); 
+			}
+
+			function async(jobid, processname){
+				 showLoadingModal();
+				 $.ajax({
+					 type:'GET',
+					 url:'/asyncProcess/queryAsyncJobResult/'+jobid,
+					 dataType:'json',
+					 success : function(data){  
+						 if(data === 'error'){ 
+							 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal();
+						 }
+					 },
+					 error:function(){ 
+						 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal(); 
+					 },
+					 complete:function(){
+						 $('#loadingModal').modal('hide');
+						 window.location.reload();
+					 }
+				 }); 
+			} 
+
+			
+			$('#networkinfodiv').prev('span').text('네트워크를 선택해 주세요.');
+			$('#networkinfodiv').hide(); 
 		 	
 			$("#networklist_table tr").click(function(){
 				 	//publicip = $(this).find('form').val();
@@ -54,16 +82,22 @@ $(
 				 	
 				 	$('#firwallMenu').removeClass('active');	
 				 	$('#portforwardingMenu').removeClass('active');
+				 	$('#networkinfodiv').prev('span').remove();
 				 	
 				 	
 				 	form = $(this).find('form');
 				 	var formData = form.serialize(); 
 				 	$.ajax({
 						type : "POST",
-						url: '/project2/index.php/networklist/getPublicIpInfo',
+						url: '/networklist/getPublicIpInfo',
 						data : formData,
 						dataType:'json',
 						success : function(publicip){
+							if(publicip.isstaticnat == 'true'){ 
+							 	$('#portforwardingMenu').hide();
+							} else{
+								$('#portforwardingMenu').show();
+							}
 							$('#selectipaddress').html(publicip.ipaddress);
 							$('#selectipaddressid').html(publicip.id);
 							$('#zoneid').html(publicip.zoneid);
@@ -89,28 +123,34 @@ $(
 				selectipaddressid = $('#selectipaddressid').text(); 
 				
 				$.ajax({
-					type:"POST",
-					url: 'http://localhost/project2/index.php/networklist/getlistFireWallInfoByIpAddress',
-					data : {'ipaddressid' : selectipaddressid},
+					type:"GET",
+					url: '/networklist/getlistFireWallInfoByIpAddress/'+selectipaddressid,
 					dataType:'json',
-					success : function(firewallrules){
-// 						alert(firewallrules.count);
-// 						alert(firewallrules.firewallrule[0].id);
-  
-						$('#firewallinfo_table').append('<tbody></tbody>');
+					success : function(data){ 
+						if(data==null){
+							setModalMsg('방화벽 규칙이 없습니다.').modal();
+						}else{
+							$('#firewallinfo_table').append('<tbody></tbody>');
+							count = data.count;
+							firewallrules = data.firewallrule;
 							
-						for(i=0; i<firewallrules.count; i++){
-							firewallrule = firewallrules.firewallrule[i];
-							$('#firewallinfo_table tbody').append(
-									$('<tr></tr>').append(
-										$('<td></td>').html(firewallrule.cidrlist)).append(
-										$('<td></td>').html(firewallrule.protocol)).append(
-										$('<td></td>').html(firewallrule.startport)).append(
-										$('<td></td>').html(firewallrule.endport)).append(
-										$('<td></td>').html("<a href=''>수정</a>  |  <a href='' style='color:red'>삭제</a>")
-									)
-							);
-												
+							for(i=0; i<count; i++){
+								if(count==1){
+									firewallrule = firewallrules;
+								}else{
+									firewallrule = firewallrules[i];
+								}
+								
+								$('#firewallinfo_table tbody').append(
+										$('<tr></tr>').append(
+											$('<td></td>').html(firewallrule.cidrlist)).append(
+											$('<td></td>').html(firewallrule.protocol)).append(
+											$('<td></td>').html(firewallrule.startport)).append(
+											$('<td></td>').html(firewallrule.endport)).append(
+											$('<td></td>').html("<span class='modifyportforwardinglink'>수정</span>  |  <span style='color:red' class='deletefirewall'>삭제<span style='display:none'>"+firewallrule.id+"</span></span>")
+										)
+								);		
+							}
 						}
 					},
 					error : function( ){  
@@ -120,7 +160,7 @@ $(
 			});
  
 
-			$('#portforwardingMenu').click(function(){
+			$('#portforwardingMenu').click(function(){ 
 					$('#firewallinfo').hide();
 				 	$('#publicipinfo').hide();
 				 	$('#portforwardinginfo').show();
@@ -128,98 +168,67 @@ $(
 				 	$('#serverlist').children().remove(); 
 				 	$('#portforwardingMenu').addClass('active');
 					$('#firwallMenu').removeClass('active');
-
-
+					
 					selectipaddressid = $('#selectipaddressid').text();
-					zoneid = $('#zoneid').text();
-					portforwardingruleslist=[]; //전역변수
+					zoneid = $('#zoneid').text(); 
 					
 					$.ajax({
-						type:"POST",
-						url: 'http://localhost/project2/index.php/networklist/getlistPortForwardingRulesByIpAdress',
-						data :  { "ipaddressid": selectipaddressid},
+						type:"GET",
+						url: '/networklist/getlistPortForwardingRulesByIpAdress/'+selectipaddressid, 
 						dataType:'json',
-						success : function(portforwardingrules){
-	 						//showObj(portforwardingrules); //없으면 그냥 <listportforwardingrulesresponse/>이렇게 결과 나오고 null이 날라오는듯
-//	 						alert(portforwardingrules.firewallrule[0].id);
-	 					 	 
- 							if(portforwardingrules == null){
+						success : function(data){
+ 							if(data == null){
  	 							setModalMsg('포트포워딩 규칙이 없습니다.').modal();
  							}else{
- 	 							 
+ 								count = data.count;
+ 		 					 	portforwardingrules = data.portforwardingrule;
 								$('#portforwardinginfo_table').append('<tbody></tbody>');
-								for(i=0; i<portforwardingrules.count; i++){
-									portforwardingrule = portforwardingrules.portforwardingrule[i];
-									 
-									linktest = $('<span></span>').attr({id:'delete', style:'color:red'}).html('test'+i); 
-									
-									
+								for(i=0; i<count; i++){
+									if(count==1){
+										portforwardingrule = portforwardingrules;
+									}else{
+										portforwardingrule = portforwardingrules[i]; 
+									}									
 									$('#portforwardinginfo_table tbody').append(
 											$('<tr></tr>').append($('<td></td>').html(portforwardingrule.virtualmachinedisplayname))
 														  .append($('<td></td>').html(portforwardingrule.publicport+' - '+portforwardingrule.publicendport))
 														  .append($('<td></td>').html(portforwardingrule.privateport+' - '+portforwardingrule.privateendport))
 														  .append($('<td></td>').html(portforwardingrule.protocol))
 														  .append($('<td></td>').html(''))
-														  .append($('<td></td>').html("<a class='modifyportforwardinglink' href='#'>수정</a>  |  <span class='test' onclick=deletePortforwarding("+portforwardingrule.id+") style='color:red'>삭제</span>"))
-														  .append($('<span></span>').attr({id:'portforwardingid', style: 'display:none'}).html(portforwardingrule.id))
-														  .append(linktest)
-									);  
+														  .append($('<td></td>').html("<span class='modifyportforwardinglink'>수정</span>  |  <span style='color:red' class='deleteportforwarding'>삭제<span style='display:none'>"+portforwardingrule.id+"</span></span>"))
+														  .append($('<span></span>').attr({id:'portforwardingid', style: 'display:none'}).html(portforwardingrule.id)) 
+									).attr({id:i});  
 								}
  							}
 						},
 						error : function( ){  
 							alert('실행실패'); 
 						}
-					});
- 
-// 					for(i=0; i<portforwardingruleslist; i++){
-// 						alert(portforwardingruleslist[i]);
-// 						$('#test'+i).click( 
-// 								 function(){
-// 									// showLoadingModal();
-// 									 alert(portforwardingrule.id);
-// 	//								 $.ajax({
-// 	//										type:'GET',
-// 	//										url:'/project2/index.php/networklist/deletePortForwardingRule/'+portforwardingrule.id,
-// 	//										dataType: 'json',
-// 	//										success : function(data){
-// 	//											 jobid = data.jobid; 
-// 	//											 $.ajax({
-// 	//												 type:'GET',
-// 	//												 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-// 	//												 dataType:'json',
-// 	//												 success : function(data){ 
-// 	//													 $('#loadingModal').modal('hide');  
-// 	//													 window.location.href='/project2/index.php/networklist';
-// 	//												 },
-// 	//												 error:function(){
-// 	//													 alert('실행실패');
-// 	//												 }
-// 	//											 }); 
-												   
-// 	//										},
-// 	//										error : function( ){  
-// 	//											alert('실행실패');
-// 	//										}
-// 	//								});//ajax
-// 								 }
-// 						);//testclick
-// 					}
-					 
+					});//ajax 
 
 					$.ajax({
 						type:'GET',
-						url:'/project2/index.php/cloudlist/getVMsByZoneId/'+zoneid,
+						url:'/cloudlist/getVMsByZoneId/'+zoneid,
 						dataType: 'json',
-						success : function(vms){
-							for(i=0; i<vms.length; i++){
-								vm=vms[i];
-								$('#serverlist').append(
-										$('<option></option>').attr({
-											'value' : vm.displayname,
-											'id' : vm.id
-										}).html(vm.displayname)
-								);
+						success : function(data){
+							if(data == null){
+							}else{
+								vms = data.virtualmachine;
+								count = data.count;
+							 
+								for(i=0; i<count; i++){
+									if(count==1){
+										vm = vms;
+									}else{
+										vm=vms[i];
+									}
+									$('#portforwardinginfo #serverlist').append(
+											$('<option></option>').attr({
+												'value' : vm.displayname,
+												'id' : vm.id
+											}).html(vm.displayname)
+									);
+								}
 							}
 						},
 						error : function( ){  
@@ -227,99 +236,67 @@ $(
 						}
 					});
 				 	
-			}) 
-		
+			}) //portforwardingMenu click 
+	 
 
-			var test = function (id){
-				alert(id);
-// 				$.ajax({
-// 					type:'GET',
-// 					url:'/project2/index.php/networklist/deletePortForwardingRule/'+id,
-// 					dataType: 'json',
-// 					success : function(data){
-						
-// // 						showObj(data);//아무거도 안날라옴
-// 						 $('#loadingModal').modal('hide'); 
-// 						 location.href="/project2/index.php/networklist"; //일단은
-// // 						aync이긴 한데 빨리 되는듯
-// // 						 jobid = data.jobid;
-// // 						 $.ajax({
-// // 							 type:'GET',
-// // 							 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-// // 							 dataType:'json',
-// // 							 success : function(data){
-// // 								 $('#loadingModal').modal('hide'); 
-// // 								 location.href="/project2/index.php/networklist"; //일단은
-// // 							 },
-// // 							 error:function(){
-// // 								 alert('실행실패');
-// // 							 }
-// // 						 });
-// 					},
-// 					error : function( ){  
-// 						alert('실행실패');
-// 					}
-// 				});
-			}
+		$(document).on("click",".deleteportforwarding",function(){  
+			portforwardingid = $(this).children('span').html();
+			$.ajax({
+				type:'GET',
+				url:'/networklist/deletePortForwardingRule/'+portforwardingid,
+				dataType: 'json',
+				success : function(data){
+					 jobid = data.jobid; 
+					 async(jobid,'DELETE PORTFORWARDINGRULE'); 
+				},
+				error : function( ){  
+					setModalMsg('실행실패!').modal(); 
+				}
+			});
+		});
 
+		$(document).on("click",".deletefirewall",function(){ 
+			firewallid = $(this).children('span').html();
+			alert(firewallid);
+			$.ajax({
+				type:'GET',
+				url:'/networklist/deleteFirewallRule/'+firewallid,
+				dataType: 'json',
+				success : function(data){
+					window.location.reload();
+					//비동기맞나? 너무빨리끝남..
+// 					 jobid = data.jobid; 
+// 					 async(jobid,'DELETE FIREWALLRULE'); 
+				},
+				error : function( ){  
+					setModalMsg('실행실패!').modal(); 
+				}
+			});
+		});
 			
-		$('#eonjeongtest').html('eonjeongtest');
-		$('#eonjeongtest').click(test('testid'));
-		//$('#eonjeongtest').click(function(){alert('test')});
-		
 		$('#createportforwardingbtn').click(
-			function(){ 
+			function(){
 				selectipaddressid = {name : 'ipaddressid', value : $('#selectipaddressid').text()};
 				virtualmachineid = {name : 'virtualmachineid', value : $('#serverlist option:selected').attr('id')};
 				protocol = {name : 'protocol', value : $('#portforwardingprotocol option:selected').val() };
  
 				form = $('#createportforwardingform');
 			 	var formData = form.serializeArray(); 
-	
-			 	formData.push(selectipaddressid,virtualmachineid,protocol);
-			 
-// 				$.ajax({
-// 					type:'POST',
-// 					url: 'http://localhost/project2/index.php/networklist/createPortForwarding',
-// 					data : formData,
-// 					dataType:'json',
-// 					success : function(publicip){
-// 						alert('실행성공');
-// 						$('#result').text(publicip);
-// 					},
-// 					error : function( ){  
-// 						alert('실행실패');
-// 					}
-// 				}); 
-				showLoadingModal();
+			 	formData.push(selectipaddressid,virtualmachineid,protocol); 
+			 	
 				$.ajax({
 					type:'POST',
-					url:'/project2/index.php/networklist/createPortForwarding',
+					url:'/networklist/createPortForwarding',
 					data : formData,
 					dataType: 'json',
 					success : function(data){
-// 						showObj(data);//아무거도 안날라옴
-						 $('#loadingModal').modal('hide'); 
-						 location.href="/project2/index.php/networklist"; //일단은
-// 						aync이긴 한데 빨리 되는듯
-// 						 jobid = data.jobid;
-// 						 $.ajax({
-// 							 type:'GET',
-// 							 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-// 							 dataType:'json',
-// 							 success : function(data){
-// 								 $('#loadingModal').modal('hide'); 
-// 								 location.href="/project2/index.php/networklist"; //일단은
-// 							 },
-// 							 error:function(){
-// 								 alert('실행실패');
-// 							 }
-// 						 });
+						 jobid = data.jobid; 
+						 async(jobid,'CREATE PORTFORWARDING'); 
 					},
-					error : function( ){ 
-						alert('실행실패');
+					error : function( ){  
+						setModalMsg('실행실패!').modal(); 
 					}
-				}); //ajax
+				});
 			}
 
 			
@@ -330,69 +307,26 @@ $(
 					selectipaddressid = {name : 'ipaddressid', value : $('#selectipaddressid').text()};
 					protocol = {name : 'protocol', value : $('#firewallprotocol option:selected').val() };
 	 
-					form = $('#createportforwardingform');
-				 	var formData = form.serializeArray(); 
-		
+					form = $('#createportfirewallform');
+				 	var formData = form.serializeArray();  
 				 	formData.push(selectipaddressid, protocol);
-				  
-					showLoadingModal();
-					$.ajax({
+ 
+				 	$.ajax({
 						type:'POST',
-						url:'/project2/index.php/networklist/createFirewallRule',
+						url:'/networklist/createFirewallRule',
 						data : formData,
 						dataType: 'json',
-						success : function(data){
-//	 						showObj(data);//아무거도 안날라옴
-							 $('#loadingModal').modal('hide'); 
-							 location.href="/project2/index.php/networklist"; //일단은
-//	 						aync이긴 한데 빨리 되는듯
-//	 						 jobid = data.jobid;
-//	 						 $.ajax({
-//	 							 type:'GET',
-//	 							 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-//	 							 dataType:'json',
-//	 							 success : function(data){
-//	 								 $('#loadingModal').modal('hide'); 
-//	 								 location.href="/project2/index.php/networklist"; //일단은
-//	 							 },
-//	 							 error:function(){
-//	 								 alert('실행실패');
-//	 							 }
-//	 						 });
+						success : function(data){ 
+							 jobid = data.jobid; 
+							 async(jobid,'CREATE FIREWALL'); 
 						},
-						error : function( ){ 
-							alert('실행실패');
+						error : function( ){  
+							setModalMsg('실행실패!').modal(); 
 						}
-					}); //ajax
-				}
-
-				
-			);
-		
-		function showObj(obj){
-			var str="";
-			for(key in obj){
-				str  += key+"="+obj[key]+"\n";
-			}
-			alert('showObj\n'+str);
-			return;
-		}
-
-		function setModalMsg(msg){ 
-			 $('#msgModal #msg').empty();
-			 $('#msgModal #msg').html(msg);
-			 return $('#msgModal');
-		}
-
-
-		function showLoadingModal(){
-			$('#loadingModal').modal({backdrop:"static", keyboard:false}); 
-		}
-}
-//-----------------------------			
-);  
-</script>
-<div id='resulttest'><a id='eonjeongtest' >test</a></div>
+					}); 
+		}); 
+});  
+</script> 
 <!-- 네트워크목록--> 
 	<div class="container-fluid">
 		<div class="row-fluid">
@@ -405,6 +339,8 @@ $(
 							<td>공인IP</td>
 							<td>위치</td>
 							<td>설명</td>
+							<td>StaticNat</td>
+							<td>기본IP</td>
 						</tr>
 					</thead>
 					<tbody>
@@ -424,7 +360,20 @@ $(
 			echo $publicIp ['ipaddress'];
 			echo "</td> <td>";
 			echo $publicIp ['zonename']; 
-			echo "</td><td></td></form></tr>";
+			echo "</td><td></td>";
+			echo "<td>";
+			if($publicIp['isstaticnat'] == 'true'){
+				echo $publicIp['virtualmachinename'];
+			}else{
+				echo '-';
+			}
+			echo "</td><td>";
+			if($publicIp['issourcenat'] == "true"){
+				echo "<span style='color:blue'>YES</span>";
+			}else{
+				echo "<span style='color:red'>NO</span>";
+			}
+			echo "</form></tr>";
 			 
 		}
 		?>

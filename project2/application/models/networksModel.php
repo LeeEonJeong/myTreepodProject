@@ -19,6 +19,18 @@ class NetworksModel extends CI_Model {
 		return $publicIpAddreses;
 	}
 	
+	function getPublicIpAddressByZoneId($zoneid){
+		$cmdArr = array (
+				"command" => "listPublicIpAddresses",
+				"zoneid" => $zoneid,
+				"apikey" => $_SESSION ['apikey']
+		);
+		
+		$publicIpAddreses = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
+		
+		return $publicIpAddreses;
+	}
+	
 	function getPublicIpInfo() {
 		$cmdArr = array (
 				"command" => "listPublicIpAddresses",
@@ -124,11 +136,11 @@ class NetworksModel extends CI_Model {
  	}
  	
  	//ipaddress에 따라서 룰 가져오기
- 	function getlistPortForwardingRulesByIpAdress(){
+ 	function getlistPortForwardingRulesByIpAdress($ipaddressid){
  		$cmdArr = array (
  				"command" => "listPortForwardingRules",
  				//"ipaddressid" => "465e6db6-7b44-4ea4-9ab2-b4ff6c616494",
- 				"ipaddressid" => $_POST['ipaddressid'],
+ 				"ipaddressid" =>$ipaddressid,
  				"apikey" => $_SESSION ['apikey']
  		);
  			
@@ -182,28 +194,28 @@ class NetworksModel extends CI_Model {
  		return $publicIpAddreses;
  	}
  	
- 	function getlistFireWallInfoByIpAddress() {
+ 	function getlistFireWallInfoByIpAddress($ipaddress) {
  		$cmdArr = array (
  				"command" => "listFirewallRules",
- 				"ipaddressid" => $_POST['ipaddressid'],
+ 				"ipaddressid" => $ipaddress,
  				"apikey" => $_SESSION ['apikey']
  		);
  	
  		$result = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
- 		 
- 		if($result['count'] != 1){ } //error 정보 무조건 하나일거아냐....아닌가 나중에 바뀌나?
- 	
- 		$publicip = $result;
- 	
- 		return $publicip;
+ 		
+ 		if(count($result) == 1){
+ 			//attribute드간거
+ 			return null;
+ 		}
+ 		return $result;
  	}
  	
  	function createFirewallRule(){ //비동기
  		$cmdArr = array (
- 				"command" => "createPortForwardingRule",
+ 				"command" => "createFirewallRule",
  				"ipaddressid" => $_POST['ipaddressid'],
  				"protocol" => $_POST["protocol"],
- 				//"cidrlist" => $_POST['cidrlist'], //Firewall에 등록할 source cidrlist ( 미기입시, 모든 IP 허용 정)
+ 				"cidrlist" => $_POST['cidrlist'], //Firewall에 등록할 source cidrlist ( 미기입시, 모든 IP 허용 정)
  				"startport" => $_POST["startport"],
  				"endport" => $_POST["endport"],
  				"apikey" => $_SESSION ['apikey']
@@ -214,10 +226,10 @@ class NetworksModel extends CI_Model {
  	}
  	
  	
- 	function deleteFirewallRule(){//비동기
+ 	function deleteFirewallRule($firewallid){//비동기
  		$cmdArr = array (
  				"command" => "deleteFirewallRule",
- 				"ipaddressid" => $_POST['firwallRuleId'],
+ 				"id" => $firewallid,
  				"apikey" => $_SESSION ['apikey']
  		);
  			

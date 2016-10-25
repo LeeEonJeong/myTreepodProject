@@ -8,17 +8,12 @@ $(
 			    	$('#package').empty(); //내용비움
 			    	
 				    $.ajax({
-						type : "POST",
-						url: '/project2/index.php/orderCloud/getPackagesByZoneid',
-						data : {'zoneid' : zoneid},
-						datatype : 'json',
-						success : function(data)
-						{ 
-							var obj = jQuery.parseJSON(data);
-//								alert(obj[1]);
-//								alert(obj.length);
-							
-							for(var i=0; i<obj.length; i++){ 
+						type : "GET",
+						url: '/orderCloud/getPackagesByZoneid/'+zoneid,
+						dataType : 'json',
+						success : function(obj)
+						{
+								for(var i=0; i<obj.length; i++){ 
 								$('#package ').append(
 									$('<input/>').attr({
 												type:'button',
@@ -33,22 +28,18 @@ $(
 									function(){
 										$('#os').empty();
 										$('#datadisk').empty();
- 
-										producttype = getProductType($(this).val());
-										$('#producttype').text(producttype);
-										
+										$('#producttype').text($(this).val());
+								 
 										$.ajax({
-											type : "POST",
-											url: '/project2/index.php/orderCloud/getOSlist',
-											data : {'package' : $(this).val(), 'zoneid' : zoneid},
-											datatype : 'json',
+											type : "GET",
+											url: '/orderCloud/getOSlist/'+zoneid+'/'+$(this).val(),
+											dataType : 'json',
 											success : function(oslist)
 											{
-												var obj = jQuery.parseJSON(oslist);
-												
+												showObj(oslist);
 												$('#os').append("<option>운영체제를 선택하세요. </option>");
-												for(i=0; i<obj.length; i++){
-													$('#os').append("<option value='"+obj[i]+"'>"+obj[i]+"</option>");
+												for(i=0; i<oslist.length; i++){
+													$('#os').append("<option value='"+oslist[i]+"'>"+oslist[i]+"</option>");
 												}
 											},
 											error : function( ){  
@@ -67,9 +58,11 @@ $(
 				
 		$("#os").change(
 				function(){
+					producttype = $('#producttype').text();
+					os = $('#os option:selected').val();
 					$.ajax({
 						type : "POST",
-						url: '/project2/index.php/orderCloud/getDatadisklist',
+						url: '/orderCloud/getDatadisklist/'+zoneid+'/'+producttype+'/'+os,
 						data : {'package' : $(this).val(), 'zoneid' : zoneid, 'os' : $('#os option:selected').val()},
 						datatype : 'json',
 						success : function(disklist)
@@ -94,7 +87,7 @@ $(
 		checkname = $('#servername td input:text').val(); 
 		$.ajax({
 			type : 'GET',
-			url : "/project2/index.php/orderCloud/checkVirtualMachineName/"+ checkname,
+			url : "/orderCloud/checkVirtualMachineName/"+ checkname,
 			success : function(data){ 
 				if(data.toLowerCase().trim() === 'true')
 					result = true;
@@ -120,7 +113,7 @@ $(
 		servername = $('#servername td input:text').val();
 		hostname = $('#hostname td input:text').val();
 		zoneid = $('#zonename option:selected').val();
-		producttype = $('#producttype').text();
+		producttype = getProductType($('#producttype').text());
 		os = $('#os option:selected').val();
 		datadisk = $('#datadisk option:selected').val();
 	 	rootonly = $(':radio[name="rootonly"]:checked').val();
@@ -145,7 +138,7 @@ $(
 // 	 	alert(os);
 // 	 	alert(datadisk);
 // 	 	alert(servername);
-// 	 	alert(rootonly);
+// 	 	alert(rootonly);	
 // 	 	alert(usageplantype);
 
 		orderdata = 
@@ -161,7 +154,7 @@ $(
 			
 	 	$.ajax({
 			type : "POST",
-			url: '/project2/index.php/orderCloud/orderVM',
+			url: '/orderCloud/orderVM',
 			data : orderdata,
 			//datatype : 'json',
 			success : function(data)
@@ -203,7 +196,8 @@ $(
 	}
 });  
 </script>
-<div id='result'class="span12"></div>
+<div id='result'class="span12">
+<div>
 			<h3>서버생성</h3>
 			<hr>
 			 
@@ -280,6 +274,6 @@ $(
 			   			<td><input type="button" id="orderbtn"class="btn" value="신청"/></td>
 			   		</tr>
 			 	</table>  
-		</div>
 	</div>
 </div>
+	

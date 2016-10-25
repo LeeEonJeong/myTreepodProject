@@ -37,9 +37,9 @@
 				 	
 				 	<tr>
 				 		<th class="subtitle">내부주소</th>
-				 		<th id='nic_ipaddress'></th>
+				 		<th  id="inneraddr">test</th> 
 				 		<th class="subtitle">외부주소</th>
-				 		<th id='nic_netmask'></th>
+				 		<th  id="outeraddr"></th> 
 				 	</tr>
 				 	
 				 	<tr>
@@ -69,7 +69,7 @@
 				<table id="servervolumeinfo_table" class="table table-condensed" >
 					<thead>
 						<tr>
-							<th class="subtitle"></h>
+							<th class="subtitle"></th>
 							<th class="subtitle">이름</th>
 							<th class="subtitle">타입</th>
 							<th class="subtitle">용량</th>

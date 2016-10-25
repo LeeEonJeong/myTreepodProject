@@ -11,18 +11,18 @@
 			<div class="span7"  >
 				<h5>디스크 검색하기</h5>
 				<form>
-					<div id="custom-search-input">
-						<select>
-							<option>전체</option>
-							<option>KOR-Central A</option>
-							<option>KOR-Central B</option>
-							<option>KOR-HA</option>
-							<option>KOR-Seoul M</option>
-							<option>JPN</option>
-						</select> <input type="text" class="input-medium search-query"
-							placeholder="검색할 디스크명을  입력해 주세요." />
+					<div id='searchvolumediv'class="custom-search-input">
+						<select id='zonename'>
+			   					<option value='all'>존을 선택하세요.</option>
+								<option value="eceb5d65-6571-4696-875f-5a17949f3317">KOR-Central A</option>
+								<option value="9845bd17-d438-4bde-816d-1b12f37d5080">KOR-Central B</option>
+								<option value="dfd6f03d-dae5-458e-a2ea-cb6a55d0d994">KOR-HA</option>
+								<option value="95e2f517-d64a-4866-8585-5177c256f7c7">KOR-Seoul M</option>
+								<option value="3e8ce14a-09f1-416c-83b3-df95af9d6308">JPN</option>
+								<option value="b7eb18c8-876d-4dc6-9215-3bd455bb05be">US-West</option>
+						</select> <input type="text" class="input-medium search-query" id='searchword' placeholder="검색할 디스크명을  입력해 주세요." />
 						<span class="input-group-btn">
-							<button type="submit">
+							<button id='searchvolumebtn' type="button">
 								<i class="icon-search fa-10x"></i> 검색
 							</button>
 						</span> 
@@ -41,7 +41,39 @@
 <script>
 $( 
 //-----------------------------
-		function (){ 
+		function (){
+			function setModalMsg(msg){ 
+				 $('#msgModal #msg').empty();
+				 $('#msgModal #msg').html(msg);
+				 return $('#msgModal');
+			} 
+			
+			function showLoadingModal(){
+				$('#loadingModal').modal({backdrop:"static", keyboard:false}); 
+			}
+
+			function async(jobid, processname){
+				 showLoadingModal();
+				 $.ajax({
+					 type:'GET',
+					 url:'/asyncProcess/queryAsyncJobResult/'+jobid,
+					 dataType:'json',
+					 success : function(data){  
+						 if(data === 'error'){ 
+							 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal();
+						 }
+					 },
+					 error:function(){ 
+						 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal(); 
+					 },
+					 complete:function(){
+						 $('#loadingModal').modal('hide');
+						 window.location.reload();
+					 }
+				 }); 
+			} 
+
+				
 			$('#volumeactiondiv').hide();
 			$('#volumeinfodiv').hide();
 			$('#volumeactiondiv').prev('span').text('디스크를 선택해 주세요.');
@@ -61,7 +93,7 @@ $(
 						 
 						$.ajax({
 							type:"GET",
-	 	 					url:"/project2/index.php/volumelist/searchVolume/"+volumeid,
+	 	 					url:"/volumelist/searchVolume/"+volumeid,
 	 	 					dataType:'json',
 	 	 					success:function(data){
 	 	 	 					volume = data.volume;
@@ -85,16 +117,16 @@ $(
 	 	 	 					if(typeof(volume.vmname) === 'undefined'){
 	 	 	 						$('#state').html('분리');
 	 	 	 						$('#vmdisplayname').html('-');
-	 	 	 						$('#connectserverbtn').button('reset');
-	 	 	 						$('#detachserverbtn').button('loading').val('서버연결해제');
-	 	 	 						$('#deletevolumebtn').button('reset');
+	 	 	 						$('#connectserverbtn').prop('disabled',false);
+	 	 	 						$('#detachserverbtn').prop('disabled',true);
+	 	 	 						$('#deletevolumebtn').prop('disabled',false);
 	 	 	 					}else{
 	 	 	 						$('#state').html('연결');
 	 	 	 						$('#vmdisplayname').html(volume.vmdisplayname);
 	 	 	 						
-	 	 	 						$('#connectserverbtn').button('loading').val("서버연결");
-	 	 	 						$('#detachserverbtn').button('reset');
-	 	 	 						$('#deletevolumebtn').button('loading').val('삭제');
+	 	 	 						$('#connectserverbtn').prop('disabled',true);;
+	 	 	 						$('#detachserverbtn').prop('disabled',false);
+	 	 	 						$('#deletevolumebtn').prop('disabled',true);
 	 	 	 					} 
 		 	 	 					
 	 	 					},
@@ -102,6 +134,22 @@ $(
 	 	 	 					alert('수행실패');
 	 	 					}
 						});
+					}
+			);
+
+			$('#searchvolumebtn').click(
+					function(){ 
+						zoneid = $('#searchvolumediv #zonename option:selected').val(); 
+						searchword = $('#searchvolumediv #searchword').val();
+ 
+						if(zoneid=='all' && searchword==''){
+							window.location.href = '/volumelist';
+						}else if(searchword==''){  
+							window.location.href = '/volumelist/showSearchResultByZoneId/'+zoneid;
+						}else{ 
+							window.location.href = '/volumelist/showSearchResult/'+zoneid+'/'+searchword;	 
+						} 
+						 
 					}
 			);
 			
@@ -114,12 +162,10 @@ $(
 
 						$('#connectServerModal #volumename').html('<strong>'+volumename+'</strong>');
 						$('#connectServerModal #volumeid').html(volumeid);
- 
-						//asdf
-						//같은존에 있는 VM가져오기
+  
 						$.ajax({
 							type:'GET',
-							url:'/project2/index.php/cloudlist/getVMsByZoneId/'+zoneid,
+							url:'/cloudlist/getVMsByZoneId/'+zoneid,
 							dataType: 'json',
 							success : function(data){
 								//connectServerModal 보여주기
@@ -169,31 +215,14 @@ $(
 						
 						$.ajax({
 							type:'GET',
-							url:'/project2/index.php/volumelist/attachVolume/'+volumeid+'/'+vmid,
+							url:'/volumelist/attachVolume/'+volumeid+'/'+vmid,
 							dataType: 'json',
 							success : function(data){
-								 jobid = data.jobid;
-								 
-								 $.ajax({
-									 type:'GET',
-									 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-									 dataType:'json',
-									 success : function(data){ 
-										 $('#loadingModal').modal('hide');  
-										 //if(data.jobstatus==2){ 
-										 window.location.href='/project2/index.php/volumelist';
-										// }else{
-										//	 alert('서버연결해제 실패');
-										// }
-									 },
-									 error:function(){
-										 alert('실행실패');
-									 }
-								 }); 
-								   
+								 jobid = data.jobid; 
+								 async(jobid,'SERVER START'); 
 							},
 							error : function( ){  
-								alert('실행실패');
+								 setModalMsg('실행실패!').modal(); 
 							}
 						});
 					}
@@ -216,7 +245,7 @@ $(
 							//서버정지 안되어 있으면 안된다고 알려라 
 							$.ajax({
 								type:'GET',
-								url:'/project2/index.php/volumelist/searchVolume/'+volumeid,
+								url:'/volumelist/searchVolume/'+volumeid,
 								dataType: 'json',
 								success : function(data){
 											 state = data.volume.vmstate;
@@ -227,31 +256,14 @@ $(
 												 	showLoadingModal();
 													$.ajax({
 														type:'GET',
-														url:'/project2/index.php/volumelist/detachVolume/'+volumeid,
+														url:'/volumelist/detachVolume/'+volumeid,
 														dataType: 'json',
 														success : function(data){
-															 jobid = data.jobid;
-															 $.ajax({
-																 type:'GET',
-																 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-																 dataType:'json',
-																 success : function(data){
-																	 $('#loadingModal').modal('hide'); 
-																	 //alert(data.jobstatus); 
-																	 //if(data.jobstatus==2){
-																	
-																	 window.location.href='/project2/index.php/volumelist';
-																	// }else{
-																	//	 alert('서버연결해제 실패');
-																	// }
-																 },
-																 error:function(){
-																	 alert('실행실패');
-																 }
-															 });
+															 jobid = data.jobid; 
+															 async(jobid,'SERVER START'); 
 														},
-														error : function( ){ 
-															alert('실행실패');
+														error : function( ){  
+															 setModalMsg('실행실패!').modal(); 
 														}
 													}); //ajax
 											 }//else if
@@ -272,11 +284,10 @@ $(
 						}else{
 							$.ajax({
 								type:'GET',
-								url:'/project2/index.php/volumelist/deleteVolume/'+volumeid,
+								url:'/volumelist/deleteVolume/'+volumeid,
 								dataType: 'json',
-								success : function(data){
-									
-									 window.location.href='/project2/index.php/volumelist'; 
+								success : function(data){ 
+									 window.location.href='/volumelist'; 
 								},
 								error : function( ){ 
 									alert('실행실패');

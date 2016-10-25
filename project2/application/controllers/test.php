@@ -14,22 +14,35 @@ class Test extends MY_Controller{
 // 		$this->load->view('test2');
 // 	}
 	
-	function stopVM(){
-		$this->load->model('cloudsModel');
+	function test(){
+// 		$this->load->view('js/test.js');
+		echo strpos('test','e');
+		echo '<br>';
+		echo gettype(strpos('test','qwe'));
+		echo '<br>';
+		echo strpos('test','test');
+		echo '<br>';
+		echo strpos('test','s');
+		echo '<br>';
 		
-		//$data  = array( 'vmid' => $_POST('vmid'));
-		$this->load->view('stopVM'); 
+		$result = strpos('test','qwe');
+		if($result){ //false
+			echo 'test';
+		}else{
+			echo 'test2';
+		}
+		//$this->load->view('test');
 	}
 	
-	function test(){
-		$this->load->model('callApiModel');
-		$cmdArr = array (
-				"command" => "addVolume",
-				"apikey" => $_SESSION ['apikey'] 
-		);
+// 	function test(){
+// 		$this->load->model('callApiModel');
+// 		$cmdArr = array (
+// 				"command" => "addVolume",
+// 				"apikey" => $_SESSION ['apikey'] 
+// 		);
 		
-		$vms = $this->callApiModel->callCommandReponseJson( CallApiModel::NASURI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
+// 		$vms = $this->callApiModel->callCommandReponseJson( CallApiModel::NASURI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
 		
-		//var_dump($vms);
-	}
+// 		//var_dump($vms);
+// 	}
 }

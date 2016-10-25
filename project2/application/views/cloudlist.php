@@ -1,30 +1,24 @@
 ﻿<span style="display:none" id="where" >cloudlist</span>
  
-<!-- <form class="form-search"> -->
-<!--   <input type="text" class="input-medium search-query" placeholder="검색할 서버명"> -->
-<!--   <button type="submit"><i class="icon-search"></i></button> -->
-<!-- </form> -->
-<script>
- 
-</script>
 <!-- 서버검색하기 -->
 	<div class="container-fluid">
 		<div class="row-fluid" >
 			<div class="span7"  >
 				<h5>서버검색하기</h5>
 				<form>
-					<div id="custom-search-input">
-						<select>
-							<option>전체test</option>
-							<option>KOR-Central A</option>
-							<option>KOR-Central B</option>
-							<option>KOR-HA</option>
-							<option>KOR-Seoul M</option>
-							<option>JPN</option>
-						</select> <input type="text" class="input-medium search-query"
-							placeholder="검색할 서버명을  입력해 주세요." />
+					<div id='searchvmdiv' class = "custom-search-input">
+						<select id='zonename'>
+			   					<option value='all'>존을 선택하세요.</option>
+								<option value="eceb5d65-6571-4696-875f-5a17949f3317">KOR-Central A</option>
+								<option value="9845bd17-d438-4bde-816d-1b12f37d5080">KOR-Central B</option>
+								<option value="dfd6f03d-dae5-458e-a2ea-cb6a55d0d994">KOR-HA</option>
+								<option value="95e2f517-d64a-4866-8585-5177c256f7c7">KOR-Seoul M</option>
+								<option value="3e8ce14a-09f1-416c-83b3-df95af9d6308">JPN</option>
+								<option value="b7eb18c8-876d-4dc6-9215-3bd455bb05be">US-West</option>
+							</select>
+							<input type="text" class="input-medium search-query" id='searchword'	placeholder="검색할 서버명을  입력해 주세요." />
 						<span class="input-group-btn">
-							<button type="submit">
+							<button  id='searchvmbtn' type="button">
 								<i class="icon-search fa-10x"></i> 검색
 							</button>
 						</span> 
@@ -34,15 +28,45 @@
 			<div class="span5" >
 			<div class="nav pull-right">
 				<br><br> 
-					<a class="btn btn-primary" href="/project2/index.php/orderCloud">서버 생성하기</a> 
+					<a class="btn btn-primary" href="/orderCloud">서버 생성하기</a> 
 			</div> 
 			</div>
 		</div>
 	</div>
-
 <script>
 $(
-		function(){
+		function(){ 
+			function setModalMsg(msg){ 
+				 $('#msgModal #msg').empty();
+				 $('#msgModal #msg').html(msg);
+				 return $('#msgModal');
+			} 
+			
+			function showLoadingModal(){
+				$('#loadingModal').modal({backdrop:"static", keyboard:false}); 
+			}
+
+			function async(jobid, processname){
+				 showLoadingModal();
+				 $.ajax({
+					 type:'GET',
+					 url:'/asyncProcess/queryAsyncJobResult/'+jobid,
+					 dataType:'json',
+					 success : function(data){  
+						 if(data === 'error'){ 
+							 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal();
+						 }
+					 },
+					 error:function(){ 
+						 setModalMsg(processname + '실행이 실패하였습니다..(aync)').modal(); 
+					 },
+					 complete:function(){
+						 $('#loadingModal').modal('hide');
+						 window.location.reload();
+					 }
+				 }); 
+			} 
+			
 			$('#serveractiondiv').hide();
 			$('#serverinfodiv').hide();
 			$('#servervolumeinfodiv').hide();
@@ -71,122 +95,72 @@ $(
 					}
 				}
 			);
+
+			$('#searchvmbtn').click(
+					function(){ 
+						zoneid = $('#searchvmdiv #zonename option:selected').val(); 
+						searchword = $('#searchvmdiv #searchword').val();
+ 
+						if(zoneid=='all' && searchword==''){
+							window.location.href = '/cloudlist';
+						}else if(searchword==''){  
+							window.location.href = '/cloudlist/showSearchResultByZoneId/'+zoneid;
+						}else{ 
+							window.location.href = '/cloudlist/showSearchResult/'+zoneid+'/'+searchword;	 
+						} 
+						 
+					}
+			);
 			
-			
-			$(":button").click(	
+			$(":button").click(	 
 				function(){
 				    name = $(this)[0].id;
 				    formindex = name.replace(/[^0-9]/g,"");
 					action = name.substring(1);
 					var formData = $("#form"+formindex).serialize();
-					//alert(formData);
-					if(action=='start'){
-						showLoadingModal();
+					 
+					if(action=='start'){ 
 						$.ajax({
 								type : "POST",
-								url: '/project2/index.php/cloudlist/startVM',
+								url: '/cloudlist/startVM',
 								dataType: 'json',
 								data : formData,
 								success : function(data){
-// 									alert(action+'실행성공');
-// 									$('#state'+formindex).html('Running');
-									 jobid = data.jobid;
-									 alert(jobid); 
-									 
-									 $.ajax({
-										 type:'GET',
-										 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-										 dataType:'json',
-										 success : function(data){ 
-											 $('#loadingModal').modal('hide');  
-											 //if(data.jobstatus==2){ 
-											 window.location.href='/project2/index.php/cloudlist';
-											// }else{
-											//	 alert('서버연결해제 실패');
-											// }
-										 },
-										 error:function(){
-											 alert('실행실패');
-										 }
-									 }); 
-
+									 jobid = data.jobid; 
+									 async(jobid,'SERVER START'); 
 								},
 								error : function( ){  
-									alert(action+'실행실패');
-									$('#result').html('통신실패');
+									 setModalMsg('실행실패!').modal(); 
 								}
 						}); 
-					}else if(action == 'stop'){
-						showLoadingModal();
-					 
+					}else if(action == 'stop'){ 
 						$.ajax({
 							type : "POST",
-							url: '/project2/index.php/cloudlist/stopVM',
+							url: '/cloudlist/stopVM',
 							data : formData,
 							dataType: 'json',
 							success : function(data){
-//									alert(action+'실행성공');
-//									$('#state'+formindex).html('Running');
 								 jobid = data.jobid; 
-								 $.ajax({
-									 type:'GET',
-									 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-									 dataType:'json',
-									 success : function(data){ 
-										 $('#loadingModal').modal('hide');  
-										 //if(data.jobstatus==2){ 
-										 window.location.href='/project2/index.php/cloudlist';
-										// }else{
-										//	 alert('서버연결해제 실패');
-										// }
-									 },
-									 error:function(){
-										 alert('실행실패');
-									 }
-								 }); 
-
+								 async(jobid,'SERVER STOP'); 
 							},
 							error : function( ){  
-								alert(action+'실행실패');
-								$('#result').html('통신실패');
+								setModalMsg('실행실패!').modal(); 
 							}
 						}); 
-					}else if(action == 'reboot'){
-						showLoadingModal();
-
+					}else if(action == 'reboot'){ 
 						$.ajax({
 							type : "POST",
-							url: '/project2/index.php/cloudlist/stopVM',
+							url: '/cloudlist/stopVM',
 							data : formData,
 							dataType: 'json',
 							success : function(data){
-//									alert(action+'실행성공');
-//									$('#state'+formindex).html('Running');
 								 jobid = data.jobid; 
-								 $.ajax({
-									 type:'GET',
-									 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-									 dataType:'json',
-									 success : function(data){ 
-										 $('#loadingModal').modal('hide');  
-										 //if(data.jobstatus==2){ 
-										 window.location.href='/project2/index.php/cloudlist';
-										// }else{
-										//	 alert('서버연결해제 실패');
-										// }
-									 },
-									 error:function(){
-										 alert('실행실패');
-									 }
-								 }); 
-
+								 async(jobid,'SERVER REBOOT'); 
 							},
 							error : function( ){  
-								alert(action+'실행실패');
-								$('#result').html('통신실패');
+								setModalMsg('실행실패!').modal(); 
 							}
-					});
-						
+					}); 
 				}  
 		});
 
@@ -196,27 +170,16 @@ $(
 					showLoadingModal();
 					$.ajax({
 						type:'GET',
-						url:'/project2/index.php/cloudlist/initializeOS/'+vmid,
+						url:'/cloudlist/initializeOS/'+vmid,
 						dataType: 'json',
 						success : function(data){
-							 jobid = data.jobid;
-							 $.ajax({
-								 type:'GET',
-								 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-								 dataType:'json',
-								 success : function(data){
-									 $('#loadingModal').modal('hide'); 
-									 setModalMsg('OS초기화가 완료되었습니다.').modal(); 
-								 },
-								 error:function(){
-									 alert('실행실패');
-								 }
-							 });
+							 jobid = data.jobid; 
+							 async(jobid,'SERVER 초기화'); 
 						},
 						error : function( ){ 
-							alert('실행실패');
+							setModalMsg('실행실패!').modal(); 
 						}
-					}); //ajax
+					}); 
 				}
 		);
 
@@ -226,27 +189,16 @@ $(
 					showLoadingModal();
 					$.ajax({
 						type:'GET',
-						url:'/project2/index.php/cloudlist/resetPwdVM/'+vmid,
+						url:'/cloudlist/resetPwdVM/'+vmid,
 						dataType: 'json',
 						success : function(data){
-							 jobid = data.jobid;
-							 $.ajax({
-								 type:'GET',
-								 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-								 dataType:'json',
-								 success : function(data){
-									 $('#loadingModal').modal('hide'); 
-									 setModalMsg('비밀번호초기화가 완료되었습니다.\n 비밀번호 : '+data.jobresult.password).modal();
-								 },
-								 error:function(){
-									 alert('실행실패');
-								 }
-							 });
+							 jobid = data.jobid; 
+							 async(jobid,'SERVER 비밀번호 초기화'); 
 						},
 						error : function( ){ 
-							alert('실행실패');
+							setModalMsg('실행실패!').modal(); 
 						}
-					}); //ajax
+					});
 				}
 		); 
 
@@ -256,30 +208,18 @@ $(
 					showLoadingModal();
 					$.ajax({
 						type:'GET',
-						url:'/project2/index.php/cloudlist/deleteVM/'+vmid,
+						url:'/cloudlist/deleteVM/'+vmid,
 						dataType: 'json',
 						success : function(data){
-							 jobid = data.jobid;
-							 $.ajax({
-								 type:'GET',
-								 url:'/project2/index.php/asyncProcess/queryAsyncJobResult/'+jobid,
-								 dataType:'json',
-								 success : function(data){
-									 $('#loadingModal').modal('hide'); 
-									 location.href='/project2/index.php/cloudlist';
-								 },
-								 error:function(){
-									 alert('실행실패');
-								 }
-							 });
+							 jobid = data.jobid; 
+							 async(jobid,'SERVER 비밀번호 초기화'); 
 						},
 						error : function( ){ 
-							alert('실행실패');
+							setModalMsg('실행실패!').modal(); 
 						}
-					}); //ajax
+					});
 				}
-		);
-		
+		); 
 
 		$('#serverlist_table tr').click(
 				function(){
@@ -294,53 +234,74 @@ $(
 				    formindex =$(this).index();
 					formdata = $("#form"+formindex).serializeArray()[0]; //어차피하나(vmid)
 					vmid = formdata['value']; 
-					state = $('#serverlist_table #state'+formindex).text();
-
-
+					state = $('#serverlist_table #state'+formindex).text(); 
+					
 					if(state=='Stopped'){
 						$('#osinitializebtn').prop('disabled',false);
 						$('#resetpwdbtn').prop('disabled',false);
-						$('#deletevmbtn').prop('disabled',false);
-						//asdfasdf
+						$('#deletevmbtn').prop('disabled',false); 
 					}else{
 						$('#osinitializebtn').prop('disabled',true);
 						$('#resetpwdbtn').prop('disabled',true);
 						$('#deletevmbtn').prop('disabled',true);
 					}
-					
+ 
  					$.ajax({
  	 					type:"GET",
- 	 					url:"/project2/index.php/cloudlist/searchVM/"+vmid,
+ 	 					url:"/cloudlist/searchVM/"+vmid,
  	 					dataType:'json',
  	 					success:function(data){
  	 	 					vm = data.virtualmachine;
- 	 	 					 
- 	 	 					$('#serveractiondiv').prev('span').html("<h5>선택된 서버 : <span id='selectvmid' style='display:none'>"+vm.id+"</span>" + vm.displayname + "</h5>");
- 	 						
- 	 	 					$('#displayname').html(vm.displayname);
- 	 	 					$('#hostname').html(vm.name);
- 	 	 					$('#vmid').html(vm.id);
- 	 	 					
-							alert(vm.nic.length);
-
-// 							var count = vm.nic.length;
+ 	 	 					 	 	 	 				
+ 	 	 					$('#serveractiondiv').prev('span').html("<h5>선택된 서버 : <span id='selectvmid' style='display:none'>"+vm.id+"</span>" + vm.displayname + "</h5>"); 
+ 	 	 					$('#serverinfo_table #displayname').html(vm.displayname);
+ 	 	 					$('#serverinfo_table #hostname').html(vm.name);
+ 	 	 					$('#serverinfo_table #vmid').html(vm.id);
+ 
+							networks = vm.nic;
 							
-//  	 	 					if(count == 1){
-//  	 	 						//$('#nic_ipaddress').html(vm.nic.ipaddress);
- 	 	 						
-//  	 	 					}else if(vm.nic.length > 1){ 
-//  	 	 	 					for(i=0; i< count; i++){
-// 									alert(vm.nic[i]);	
-//  	 	 	 	 				}
-//  	 	 					}
+							if($.isArray(vm.nic)){
+								inneraddr = [];
+								for(key in networks){ 
+									ipaddress = networks[key]['ipaddress']; 
+									inneraddr.push(ipaddress);
+								}
+								inneraddr = inneraddr.join("/");
+							}else{
+								inneraddr = networks.ipaddress;
+							} 
+							
+ 	 	 					$('#serverinfo_table #inneraddr').html(inneraddr);
+
+ 	 	 					$.ajax({
+ 	 							type : "GET",
+ 	 							url: '/networklist/getPublicIpAddressByZoneId/'+vm.zoneid, 
+ 	 							dataType:'json',
+ 	 							success : function(data){
+ 	 								publicipaddresses = data.publicipaddress;
+ 	 	 							count = data.count;
+ 	 								if(count == 1 ){ //존마다 하나(기본제공)
+ 	 									$('#outeraddr').html(publicipaddresses.ipaddress);
+ 	 	 							}else{ 
+ 	 									outeraddr = [];
+ 	 									$.each(publicipaddresses, function(key,value){
+ 	 										ipaddress = value.ipaddress;
+ 	 										outeraddr.push(ipaddress);
+ 	 									});
+ 	 									$('#outeraddr').html(outeraddr.join("/"));
+ 	 	 							}
+ 	 							},
+ 	 							error : function( ){  
+ 	 								alert('실행실패');
+ 	 							}
+ 	 					 	});
  	 	 					
- 	 	 					//$('#nic_ipaddress').html(vm.nic.ipaddress);
- 	 	 					//$('#nic_netmask').html(vm.nic.netmask);
+ 	 	 					$('#outeraddr').html(outeraddr);
  	 	 					$('#templatename').html(vm.templatename);
- 	 	 					$('#zonename').html(vm.zonename);
- 	 	 					$('#serviceofferingname').html(vm.serviceofferingname);
- 	 	 					$('#created').html(vm.created);
- 	 	 					$('#state').html(vm.state);
+ 	 	 					$('#serverinfo_table #zonename').html(vm.zonename);
+ 	 	 					$('#serverinfo_table #serviceofferingname').html(vm.serviceofferingname);
+ 	 	 					$('#serverinfo_table #created').html(vm.created);
+ 	 	 					$('#serverinfo_table #state').html(vm.state);
  	 					},
  	 					error:function(){
  	 	 					alert('수행실패');
@@ -373,14 +334,12 @@ $(
  
 				$.ajax({
 	 					type:"GET",
-	 					url:"/project2/index.php/volumelist/getVolumes/"+selectvmid,
+	 					url:"/volumelist/getVolumes/"+selectvmid,
 	 					dataType:'json',
 	 					success:function(data){
 		 					$('#servervolumeinfo_table tbody').empty();
-	 	 					count = data.count;
-
-	 	 					volumes = data.volume;
-// 	 	 					$('#result').html(data);
+	 	 					count = data.count; 
+	 	 					volumes = data.volume; 
 	 	 					
 	 	 					for(i=0; i<count;i++){
 								volume = volumes[i];
@@ -407,26 +366,7 @@ $(
 	 					}
 				});
 			}
-		);
-		 
-		function showObj(obj){
-			var str="";
-			for(key in obj){
-				str  += key+"="+obj[key]+"\n";
-			}
-			alert('showObj\n'+str);
-			return;
-		}
-		function setModalMsg(msg){ 
-			 $('#msgModal #msg').empty();
-			 $('#msgModal #msg').html(msg);
-			 return $('#msgModal');
-		}
-
-
-		function showLoadingModal(){
-			$('#loadingModal').modal({backdrop:"static", keyboard:false}); 
-		}
+		); 
 }); 
 
  
@@ -462,13 +402,13 @@ $(
 			echo "<tr><form id='form".$i."' method='post'><td>";
 			echo "<input type='hidden' id='vmid' name='vmid' value='" . $vm ['id'] . "'/>";
 			echo $i + 1;
-			echo "</td><td>";
+			echo "</td><td id='displayname'>";
 			echo $vm ['displayname'];
-			echo "</td> <td>";
+			echo "</td> <td id='templatedisplaytext'>";
 			echo $vm ['templatedisplaytext'];
-			echo "</td> <td>";
+			echo "</td> <td id='zonename'>";
 			echo $vm ['zonename'];
-			echo "</td> <td>";
+			echo "</td> <td id='created'>";
 			echo $vm ['created'];
 			echo "</td> <td id='state".$i."'>";
 			echo $vm ['state'];

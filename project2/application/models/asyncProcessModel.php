@@ -14,11 +14,14 @@ class AsyncProcessModel extends CI_Model {
 			);
 			
 			$result = $this->callApiModel->callCommand(CallApiModel::URI, $cmdArr, $_SESSION['secretkey']);
-			sleep(5);
+			if($result == null){
+				return 'error';
+			}
+			sleep(2);
 			$jobStatus = $result["jobstatus"];
 			if ($jobStatus == 2) { //실패
-// 				printf($result["jobresult"]);
-// 				exit; 
+				printf($result["jobresult"]);
+				exit; 
 				return $result;
 			}
 		} while ($jobStatus != 1);

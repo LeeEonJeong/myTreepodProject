@@ -42,6 +42,11 @@ class OrderCloudModel extends CI_Model {
 		);
 		
 // 		$cmdArr = array(
+// 				"command" => "listZones",
+// 				"apikey" => $_SESSION['apikey']
+// 		);
+		
+// 		$cmdArr = array(
 // 				"command" => "deployVirtualMachine",
 // 				"zoneid" => "eceb5d65-6571-4696-875f-5a17949f3317",
 // 				"diskofferingid" => "29d33bf5-39e0-456c-b70c-cc42f0560d33",
@@ -56,36 +61,11 @@ class OrderCloudModel extends CI_Model {
 		//echo var_dump($result);
 		//return $result;  
 	}
-
-	//리팩토링용
-/* 	function getlistAvailableProductTypes() { 
-		//try{
-		$content = file_get_contents('listAvailableProductTypes.json');//CI error handling 문제 나중 처리
-		//}catch(Exception $e){
-			//echo $e->getMessage();
-		//}
-		if($content===FALSE){
-			//$zoneid='eceb5d65-6571-4696-875f-5a17949f3317';
-			$cmdArr = array (
-					"command" => "listAvailableProductTypes",
-					"zoneid" => $_POST['zoneid'],
-					"apikey" => $_SESSION ['apikey']
-			);
-			
-			$listAvailableProductTypes = $this->callApiModel->callCommandReponseJson( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
-			
-			file_put_contents('listAvailableProductTypes.json',$listAvailableProductTypes); //프로젝트폴더 파로 아래에 있음
-			return $listAvailableProductTypes;
-		}else{
-			return $content;
-		}
-	} */
 	
-	
-	function getlistAvailableProductTypesByZoneid(){
+	function getlistAvailableProductTypesByZoneid($zoneid){
 		$cmdArr = array (
 				"command" => "listAvailableProductTypes",
-				"zoneid" => $_POST['zoneid'],
+				"zoneid" => $zoneid,
 				//"zoneid" => 'eceb5d65-6571-4696-875f-5a17949f3317',
 				"apikey" => $_SESSION ['apikey']
 		);
@@ -94,29 +74,33 @@ class OrderCloudModel extends CI_Model {
 		
 		return $listAvailableProductTypes;
 	}
+	
+	function getlistAvailableProductTypes($condition, $value){
+		$cmdArr = array (
+				"command" => "listAvailableProductTypes",
+				$condition => $value,
+				"apikey" => $_SESSION ['apikey']
+		);
+			
+		$listAvailableProductTypes = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
+		
+		return $listAvailableProductTypes;
+	}
 
-	function getPackagesByZoneid(){
-		$availableProductTypes = $this->getlistAvailableProductTypesByZoneid();
+	function getPackagesByZoneid($zoneid){ //비효율적..?
+		$availableProductTypes = $this->getlistAvailableProductTypesByZoneid($zoneid);
 		$count = $availableProductTypes['count'];
 		$productTypes = $availableProductTypes['producttypes'];
-		$packages = array();
+	 	 
 		$index=0;
 		
 		if($count==0){
-			return $packages;
+			return array();
 		}
-		
-		$old='';
-		for($i=0; $i<$count; $i++){
-			$new = $productTypes[$i]['product'];
-			if($new != $old && $new !=null){
-				$packages[$index++] = $new;
-				$old = $new;
-			}
-		}
+		$packages = $this->getUniqueValueList($productTypes, 'product');
+// 		 
 		return $packages;			
 	}
-	
 	
 	function getProductIds($productsArray){
 		$count = count($productsArray);
@@ -125,112 +109,75 @@ class OrderCloudModel extends CI_Model {
 		for($i=0; $i<$count; $i++){
 			$product = $productsArray[$i];
 			$productid = explode('_', $product['productid']);//array
-			if(count($productid) != 0)
+			if(count($productid) == 3) //3개로 안되어있는것들도 있음..머지?
 				$productids[$index++] = $productid;
 		}
 		return $productids;
 	}
 	
-	function getOSlist(){
-		$productsArray = $this->getProductsByZoneidAndPackage();
-		$productids = $this->getProductIds($productsArray);
-		$productoslist = array();
-		$index = 0;
-		$old='';
-// 		echo print_r($productids);
-		for($i=0; $i<count($productids); $i++){
-			$productid = $productids[$i];
-			
-			//index 0 producttype(std, high, ssd)
-			//index 1 os
-			//index 2 datadisk
-			
-			if(count($productid) > 1){ //중간에 없는 데이터있음.. 머냥....
-				$productos = $productid[1];
-			};
-			 
-			if($old != $productos){
-				$productoslist[$index++] = $productos;
-				$old = $productos;
+	function getOSlist($zoneid, $package){
+		$productsArray = $this->getProductsByZoneidAndPackage($zoneid, $package);
+		$productids = $this->getProductIds($productsArray['producttypes']);
+		//index 0 producttype(std, high, ssd)
+		//index 1 os
+		//index 2 datadisk
+		 
+		$oslist = $this->getUniqueValueList($productids, 1);
+		 
+		return $oslist;
+	}
+	
+	function getDatadisklist($zoneid, $package, $os){
+		$productsArray = $this->getProductsByZoneidAndPackage($zoneid, $package, $os);
+		$osname = urldecode($os);		
+		$osproducts = $this->getProducts($productsArray['producttypes'], 'productid', $osname);
+		 
+		$productids = $this->getProductIds($osproducts);
+		$disklist = $this->getUniqueValueList($productids, 2);
+		//index 0 producttype(std, high, ssd)
+		//index 1 os
+		//index 2 datadisk
+		return $disklist;
+	}
+	
+	function getUniqueValueList($array,$condition){
+		$resultasrray = array();
+	
+		$old = '';
+		foreach($array as $key=>$value){
+			$new = $value[$condition];
+			if($old != $new && $new != null){
+				array_push($resultasrray, $new);
+				$old = $new;
 			}
 		}
-		
-		return $productoslist;
+	
+		return $resultasrray;
 	}
 	
-	function getDatadisklist(){
-		$productsArray = $this->getProductsByZoneidAndPackage();
-		$productids = $this->getProductIds($productsArray);
-		$datadisklist = array();
-		$index = 0;
-		$old='';
-// 		echo print_r($productids);
-		for($i=0; $i<count($productids); $i++){
-			$productid = $productids[$i];
+	function getProductsByZoneidAndPackage($zoneid, $package){
+		$cmdArr = array (
+				"command" => "listAvailableProductTypes",
+				"package" =>$package,
+				"zoneid" => $zoneid,
+				"apikey" => $_SESSION ['apikey']
+		);
 			
-			//index 0 producttype(std, high, ssd)
-			//index 1 os
-			//index 2 datadisk
-			
-			if(count($productid) > 1 && $productid[1] == $_POST['os']){ //중간에 없는 데이터있음.. 머냥....
-				
-				$datadisk = $productid[2];
-				if($old != $datadisk){
-					$datadisklist[$index++] = $datadisk;
-					$old = $datadisk;
-				}
-			}; 
-		}
+		$result = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
 		
-		return $datadisklist;
-	}
-	
-	
-	function getProductsByZoneidAndPackage(){
-		$package = $_POST['package'];
-		$zoneid = $_POST['zoneid']; 
- 
-		$productsByZoneid = $this->getlistAvailableProductTypesByZoneid();
-		$productType = $this->getProductType($package);
-		 
-		$result = $this->getProducts($productsByZoneid['producttypes'], 'productid', $productType);
-	 	
 		return $result;
 	}
 	
-	private function getProductType($package){
-		switch($package){
-			case 'Standard':
-				$productType = 'std';
-				break;
-			case 'HighMemory':
-				$productType = 'high';
-				break;
-			case 'SSD':
-				$productType = 'ssd';
-				break;
-			default:
-				$productType = 'std';
-		}
-		return $productType;
-	}
-	 
-	
-	private function getProducts($productTypes, $condition, $substring){
+	function getProducts($productTypes, $condition, $substring){
 		$products = array();
-		$count = count($productTypes);
-		 
-		$index=0;
-		 
-		for($i=0; $i<$count; $i++){
-			$product = $productTypes[$i];
-			//echo var_dump($product)."<br>";
+
+		foreach($productTypes as $key=>$value){
+			$product = $value;
 			
 			$ishas = strpos($product[$condition], $substring);
 			
-			if(isset($ishas)){
-				$products[$index++] = $product;
-				unset($ishas);
+			if(gettype($ishas) == 'integer' && $ishas >= 0){
+				array_push($products, $product);
 			}
 		}
 		return $products;

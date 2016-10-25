@@ -123,9 +123,9 @@ class CloudsModel extends CI_Model {
 				"apikey" => $_SESSION ['apikey']
 		);
 		
-		$vm = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
+		$vms = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
 		
-		return $vm;
+		return $vms;
 	}
 	
 	 

@@ -23,20 +23,20 @@ class CallApiModel extends CI_Model {
 	}
 	
 	function callCommandReponseJson($URL, $cmdArr, $SECRET) {
-		$cmdArr ['response'] = 'json';
+	//	$cmdArr ['response'] = 'json';
 		
-		$xmlUrl = $this->makeXmlUrl ( $URL, $cmdArr, $SECRET );
+		$xmlUrl = $this->makeXmlUrl2 ( $URL, $cmdArr, $SECRET );
 		
 		echo $xmlUrl;
 		
-		$orig_error_reporting = error_reporting ();
-		error_reporting ( 0 );
+// 		$orig_error_reporting = error_reporting ();
+// 		error_reporting ( 0 );
 	
-		$jsonResult = file_get_contents ( $xmlUrl ); // json파일을 stirng으로 가져옴
+// 		$jsonResult = file_get_contents ( $xmlUrl ); // json파일을 stirng으로 가져옴
 		
-		var_dump($jsonResult);
+// 		var_dump($jsonResult);
 		
-		return $jsonResult;
+// 		return $jsonResult;
 	}
 	
 	function callCommandReponseXML($URL, $cmdArr, $SECRET) {
@@ -68,64 +68,68 @@ class CallApiModel extends CI_Model {
 		
 		return $arrXml;
 	}
-	 
+	
 	function makeXmlUrl($URL, $cmdArr, $SECRET) {
 		$fArray = array_keys ( $cmdArr );
 		$vArray = array_values ( $cmdArr );
-		
+	
 		$f = array ();
 		$v = array ();
 		$cmd = array ();
 		$cmd1 = array ();
-		
+	
 		for($i = 0; $i < count ( $cmdArr ); $i ++) {
 			$vArray [$i] = strtok ( $vArray [$i], "&" );
 			$f [$i] = strtolower ( urlencode ( $fArray [$i] ) );
 			$v [$i] = strtolower ( urlencode ( $vArray [$i] ) );
 			array_push ( $cmd, $f [$i] . "=" . $v [$i] );
 		}
-		
+	
 		sort ( $cmd );
-		
+	
 		for($i = 0; $i < count ( $cmdArr ); $i ++)
 			array_push ( $cmd1, $fArray [$i] . "=" . $vArray [$i] );
-		
-		sort ( $cmd1 );
-		
-		$cmdStr = "";
-		
-		for($i = 0; $i < count ( $cmd ); $i ++) {
-			if ($i == count ( $cmd ) - 1)
-				$cmdStr = $cmdStr . $cmd [$i];
-			else
-				$cmdStr = $cmdStr . $cmd [$i] . "&";
-		}
-		
-		$signature = urlencode ( base64_encode ( hash_hmac ( "sha1", $cmdStr, $SECRET, true ) ) );
-		
-		$url = $URL;
-		
-		for($i = 0; $i < count ( $cmd1 ); $i ++)
-			$url = $url . $cmd1 [$i] . "&";
-		
-		$xmlUrl = $url . "signature=" . $signature;
-		
-		return $xmlUrl;
-	}
 	
+			sort ( $cmd1 );
+	
+			$cmdStr = "";
+	
+			for($i = 0; $i < count ( $cmd ); $i ++) {
+				if ($i == count ( $cmd ) - 1)
+					$cmdStr = $cmdStr . $cmd [$i];
+					else
+						$cmdStr = $cmdStr . $cmd [$i] . "&";
+			}
+	
+			$signature = urlencode ( base64_encode ( hash_hmac ( "sha1", $cmdStr, $SECRET, true ) ) );
+	
+			$url = $URL;
+	
+			for($i = 0; $i < count ( $cmd1 ); $i ++)
+				$url = $url . $cmd1 [$i] . "&";
+	
+				$xmlUrl = $url . "signature=" . $signature;
+	
+				return $xmlUrl;
+	}
+	 
 	function makeXmlUrl2($URL, $cmdArr, $SECRET) {
 		$fArray = array_keys ( $cmdArr );
 		$vArray = array_values ( $cmdArr );
 		
 		$f = array ();
 		$v = array ();
-		$cmd = array ();
-		$cmd1 = array ();
+		$cmd = array (); //cmd는 signature만들때 사용
+		$cmd1 = array (); //cmd1은 signature제외 query 만들 떄 사용
 		
 		for($i = 0; $i < count ( $cmdArr ); $i ++) {
 			$vArray [$i] = strtok ( $vArray [$i], "&" );
 			$f [$i] = strtolower ( urlencode ( $fArray [$i] ) );
-			$v [$i] = strtolower ( urlencode ( $vArray [$i] ) );
+			
+			$v [$i] = strtolower (urlencode($vArray [$i]));
+			if($fArray[$i] == 'productcode'){// urlencode안함 (productid, 스페이스 -> + 로 변환됨)
+				$v [$i] = str_replace('+', ' ', $v [$i]);
+			}
 			array_push ( $cmd, $f [$i] . "=" . $v [$i] );
 		}
 		
@@ -145,15 +149,27 @@ class CallApiModel extends CI_Model {
 				$cmdStr = $cmdStr . $cmd [$i] . "&";
 		}
 		
-		$signature =  base64_encode ( hash_hmac ( "sha1", $cmdStr, $SECRET, true )  );
+		echo $cmdStr;
+// 		$cmdStr = 'apikey=dujrkdjr3cxhofx7i0l2xjcxzggc2grvecudtophpwg8kgcvljz9-5p0k60gj5fsdhroon9r9pdytd3gkkwraw&command=deployvirtualmachine&productcode=std_wind+2008ent+32bit+ko_1x1&zoneid=eceb5d65-6571-4696-875f-5a17949f3317bkiNhddS1TBDVtcKWYqTTAITIGk%3D';
+
+		$ktsignature = 'bkiNhddS1TBDVtcKWYqTTAITIGk%3D';
+		echo $ktsignature.'<hr>';
+		$urldecoderesult = urldecode($ktsignature);
+		echo $urldecoderesult;
+		echo '<hr>';
+		echo base64_decode($urldecoderesult);
+		echo '<hr>';
 		
+		$signature = urlencode ( base64_encode ( hash_hmac ( "sha1", $cmdStr, $SECRET, true ) ) );
+	
 		$url = $URL;
 		
-		for($i = 0; $i < count ( $cmd1 ); $i ++)
+		for($i = 0; $i < count ( $cmd1 ); $i ++){
 			$url = $url . $cmd1 [$i] . "&";
+		}
 		
 		$xmlUrl = $url . "signature=" . $signature;
 		
 		return $xmlUrl;
-	}
+	} 
 }

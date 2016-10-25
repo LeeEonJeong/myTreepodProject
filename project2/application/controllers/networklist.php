@@ -32,13 +32,18 @@
 			print(json_encode($publicip));
 		}
 		
-		function getlistFireWallInfoByIpAddress(){
-			$firewallRules = $this->networksModel->getlistFireWallInfoByIpAddress();
+		function getlistFireWallInfoByIpAddress($ipaddress){
+			$firewallRules = $this->networksModel->getlistFireWallInfoByIpAddress($ipaddress);
 			print(json_encode($firewallRules));
 		}
 		
-		function getlistPortForwardingRulesByIpAdress(){
-			$portforwardingRules = $this->networksModel->getlistPortForwardingRulesByIpAdress();
+		function getPublicIpAddressByZoneId($zoneid){
+			$firewallRules = $this->networksModel->getPublicIpAddressByZoneId($zoneid);
+			print(json_encode($firewallRules));
+		}
+		
+		function getlistPortForwardingRulesByIpAdress($ipaddressid){
+			$portforwardingRules = $this->networksModel->getlistPortForwardingRulesByIpAdress($ipaddressid);
 			print(json_encode($portforwardingRules));
 		}
 		
@@ -56,6 +61,11 @@
 		function deletePortForwardingRule($portforwardingid){
 			$result = $this->networksModel->deletePortForwardingRule($portforwardingid);
 		    print(json_encode($result));
+		}
+		
+		function deleteFirewallRule($firewallid){
+			$result = $this->networksModel->deleteFirewallRule($firewallid);
+			print(json_encode($result));
 		}
 		
 		function getNetworksByZoneid($zoneid){

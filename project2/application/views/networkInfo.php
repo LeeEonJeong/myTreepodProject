@@ -30,34 +30,36 @@
 <!--        ////////////////////////////////////////       -->				
 				<div id="firewallinfo"> 
 					<h5>방화벽 추가</h5>
-					<div class="nav pull-right" >
-						<div id = "createfirewallbtn" class="btn">추가하기</div>
-					</div>
-					<br>
-						<table style="width:100%">
-							<thead>
-								<tr>
-									<th>Source CIDR</th>
-									<th>프로토콜</th>
-									<th>Start Port</th>
-									<th>End Port</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<th><input type="text" id="cidr" value="0.0.0.0/0"/></th>
-									<th>
-										<select id="firewallprotocol">
-											<option  value="TCP">TCP</option>
-											<option  value="UDP">UDP</option>
-											<option  value="ICMP">ICMP</option>
-										</select>
-									</th>
-									<th><input type="text" id="startport" min='1' max='99999'/></th>
-									<th><input type="text" id="endport" min='1' max='99999'/></th>
-								</tr>
-							</tbody>
-						</table>
+					<form id="createportfirewallform">
+						<div class="nav pull-right" >
+							<div id = "createfirewallbtn" class="btn">추가하기</div>
+						</div>
+						<br>
+							<table style="width:100%">
+								<thead>
+									<tr>
+										<th>Source CIDR</th>
+										<th>프로토콜</th>
+										<th>Start Port</th>
+										<th>End Port</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th><input type="text" id="cidrlist" name='cidrlist' value="0.0.0.0/0"/></th>
+										<th>
+											<select id="firewallprotocol">
+												<option  value="TCP">TCP</option>
+												<option  value="UDP">UDP</option>
+												<option  value="ICMP">ICMP</option>
+											</select>
+										</th>
+										<th><input type="text" id="startport" name='startport' min='1' max='99999'/></th>
+										<th><input type="text" id="endport" name='endport' min='1' max='99999'/></th>
+									</tr>
+								</tbody>
+							</table>
+					</form>
 					<br>
 					<h5>방화벽 리스트</h5>
 					 <table id="firewallinfo_table" class="table table-condensed">
@@ -70,6 +72,8 @@
 						 		<th  class="subtitle" >삭제 및 수정</th>
 						 	</tr>
 					 	</thead>
+					 	<tbody>
+					 	</tbody>
 					 </table>
 				</div>
 				
@@ -116,7 +120,7 @@
 					<h5>포트포워딩 리스트</h5>
 					 <table id="portforwardinginfo_table" class="table table-condensed">
 					 	<thead>
-						 	<tr class ="portforwardinginfo_table_" style='background-color:#fefefe'>
+						 	<tr style='background-color:#fefefe'>
 						  		<th class="subtitle" >서버</th>
 						 		<th class="subtitle" >공용포트</th>
 						 		<th class="subtitle" >사설포트</th>

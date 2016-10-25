@@ -13,28 +13,28 @@
 			$this->_require_login($returnURI);
 			
 			$result = $this->getRunningVolumes();
-			$nasvolumes = $this->getRunningVolumes()['response'];
-			
-			$this->load->model('networksModel');
-			
-// 			foreach($nasvolumes as $nasvolume){
-// 				$zonename = $this->networksModel->getZonename($nasvolume['zoneid']);
-// 				array_push($nasvolume,"zonename",$zonename);
-// 				//$nasvolume['zonename'] = $this->networksModel->getZonename($nasvolume['zoneid']); 
-// 			}
-			for($i=0; $i<count($nasvolumes); $i++){
-				$zonename = $this->networksModel->getZonename($nasvolumes[$i]['zoneid']);
-				$nasvolumes[$i]['zonename'] = $zonename;
-			}
-			
-			//echo var_dump($nasvolumes);
-			
 			$nasCount = $result['count'];
-			 
-			$naslistdata = array(
-					'nasVolumes' => $nasvolumes,
+			
+			if($nasCount == 0){
+				echo "<script>alert('nas가 없습니다.')</script>";
+				$naslistdata = array(
+					'nasVolumes' => array(),
 					'nasvolumeCount' => $nasCount
-			); 
+				);
+			}else{
+				//$nasvolumes = $this->getRunningVolumes()['response'];
+				$nasvolumes = $result['response'];
+				$this->load->model('networksModel');
+			
+				for($i=0; $i<count($nasvolumes); $i++){
+					$zonename = $this->networksModel->getZonename($nasvolumes[$i]['zoneid']);
+					$nasvolumes[$i]['zonename'] = $zonename;
+				}			 
+				$naslistdata = array(
+						'nasVolumes' => $nasvolumes,
+						'nasvolumeCount' => $nasCount
+				);
+			}
 		
 			$this->load->view('naslist', $naslistdata); 
 		 	$this->load->view('nasManageMenu');

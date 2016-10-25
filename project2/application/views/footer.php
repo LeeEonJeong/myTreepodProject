@@ -8,9 +8,6 @@
 </div>
 </div>
 <!-- 마지막 div2개는 head의 container-fluid와 row-fluid -->
-
-
-<script src="http://code.jquery.com/jquery.js"></script>
-<script src="/project1/static/lib/bootstrap/js/bootstrap.min.js"></script>
+ 
 </body>
 </html>

@@ -1,22 +1,22 @@
 /*서버리스틑에서 검색하는 css*/
-#custom-search-input{
+.custom-search-input{
     padding: 1px;
     border: solid 1px #E4E4E4;
     border-radius: 6px;
     background-color: #fff;
 }
-#custom-search-input select{
+.custom-search-input select{
 	margin: 2px 0 0 0;
     border: 0;
     box-shadow: none;
 }
-#custom-search-input input{
+.custom-search-input input{
 	width: 50%;
     border: 0;
     box-shadow: none;
 }
 
-#custom-search-input button{
+.custom-search-input button{
     margin: 2px 0 0 0;
     background: none;
     box-shadow: none;
@@ -26,7 +26,7 @@
     border-left: solid 1px #ccc;
 }
  
-#custom-search-input .icon-search{
+.custom-search-input .icon-search{
     font-size: 30px;
 }
 

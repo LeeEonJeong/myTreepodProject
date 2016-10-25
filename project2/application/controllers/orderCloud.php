@@ -34,21 +34,18 @@
 			echo json_encode($listAvailableProductTypes);
 		}
 		
-		function getPackagesByZoneid(){
-			$packages =  $this->orderCloudModel->getPackagesByZoneid();
-			
+		function getPackagesByZoneid($zoneid){
+			$packages =  $this->orderCloudModel->getPackagesByZoneid($zoneid);
 			echo json_encode($packages);
 		}
 		
-		function getOSlist(){
-			$productoslist = $this->orderCloudModel->getOSlist();
-			
+		function getOSlist($zoneid, $package){
+			$productoslist = $this->orderCloudModel->getOSlist($zoneid, $package);
 			echo json_encode($productoslist);
 		}
 		
-		function getDatadisklist(){
-			$productdisklist = $this->orderCloudModel->getDatadisklist();
-			
+		function getDatadisklist($zoneid, $package, $os){
+			$productdisklist = $this->orderCloudModel->getDatadisklist($zoneid, $package, $os);
 			echo json_encode($productdisklist);
 		} 
 		 
@@ -56,5 +53,11 @@
 			$this->orderCloudModel->orderVM();
 			//$result = $this->orderCloudModel->orderVM();
 			//echo json_encode($result);
+		}
+		
+		//모델에서만 사용할 가(test용)
+		function getProductsByZoneidAndPackage($zoneid, $package){
+			$products = $this->orderCloudModel->getProductsByZoneidAndPackage($zoneid, $package);
+			echo json_encode($products);
 		}
 	}

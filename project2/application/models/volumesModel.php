@@ -49,6 +49,18 @@ class VolumesModel extends CI_Model {
 		return $volumes;
 	}
 	
+	function getVolumesByCondition($condition, $value){
+		$cmdArr = array (
+				"command" => "listVolumes",
+				$condition => $value,
+				"apikey" => $_SESSION ['apikey']
+		);
+	
+		$volumes = $this->callApiModel->callCommand( CallApiModel::URI, $cmdArr, $this->session->userdata ( 'secretkey' ) );
+	
+		return $volumes;
+	}
+	
 	function attachVolume($id, $virtualmachineid){
 		$cmdArr = array (
 				"command" => "attachVolume",

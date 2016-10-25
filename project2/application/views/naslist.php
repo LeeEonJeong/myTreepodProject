@@ -9,18 +9,19 @@
 			<div class="span7"  >
 				<h5>NAS볼륨 검색하기</h5>
 				<form>
-					<div id="custom-search-input">
-						<select>
-							<option>전체</option>
-							<option>KOR-Central A</option>
-							<option>KOR-Central B</option>
-							<option>KOR-HA</option>
-							<option>KOR-Seoul M</option>
-							<option>JPN</option>
-						</select> <input type="text" class="input-medium search-query"
-							placeholder="검색할  NAS볼륨명을  입력해 주세요." />
+					<div class="custom-search-input">
+						<select id='zonename'>
+			   					<option value='all'>존을 선택하세요.</option>
+								<option value="eceb5d65-6571-4696-875f-5a17949f3317">KOR-Central A</option>
+								<option value="9845bd17-d438-4bde-816d-1b12f37d5080">KOR-Central B</option>
+								<option value="dfd6f03d-dae5-458e-a2ea-cb6a55d0d994">KOR-HA</option>
+								<option value="95e2f517-d64a-4866-8585-5177c256f7c7">KOR-Seoul M</option>
+								<option value="3e8ce14a-09f1-416c-83b3-df95af9d6308">JPN</option>
+								<option value="b7eb18c8-876d-4dc6-9215-3bd455bb05be">US-West</option>
+						</select>
+						<input type="text" class="input-medium search-query" placeholder="검색할  NAS볼륨명을  입력해 주세요." />
 						<span class="input-group-btn">
-							<button type="submit">
+							<button type="button">
 								<i class="icon-search fa-10x"></i> 검색
 							</button>
 						</span> 
